@@ -1,0 +1,53 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{amssymb}
+
+\newtheorem{theorem}{Theorem}
+\newcommand\numberthis{\addtocounter{equation}{1}\tag{\theequation}}
+
+\begin{document}
+\title{Guaranteeing Accuracy of a Square Root Approximation}
+\author{Toanl Nguyen}
+\maketitle
+Suppose we have an algorithm to approximate the square root of a number $S$ to a specified precision $\epsilon$. Let $\alpha = \sqrt{S}$ and let $x$ be our approximation of $\alpha$. How do we check how close $x$ is to $\alpha$ when we do not know the true value of $\alpha$? The first idea may be to square the approximation and see how closely it aligns to the original number. However, $|S-x^2| = |\alpha^2 - x^2|$ is the error between the squares, not the error of the estimate itself, which is $|\alpha - x|$. Perhaps there is some relationship between the two?
+
+\begin{theorem}
+Let $\alpha^2=S \in \mathbb{R^+}$, and $x \approx \alpha$. If $|S-x^2| < \epsilon^2$ then $|\alpha-x|<\epsilon$
+\end{theorem}
+
+\begin{proof}
+Suppose $|S-x^2| < \epsilon^2$
+\begin{align*}
+|S-x^2| < \epsilon^2 &\iff -\epsilon^2 < S-x^2<\epsilon^2\\
+                  &\iff -\epsilon^2 < S-x^2 \mbox{ and } S-x^2<\epsilon^2
+\end{align*}
+Taking the left inquality,
+
+\begin{align*}
+-\epsilon^2 < S-x^2 \iff& x^2 < \alpha^2 + \epsilon^2\\
+\iff& x < \sqrt{\alpha^2 + \epsilon^2}\\
+\implies& x < \sqrt{\alpha^2 + 2\alpha\epsilon + \epsilon^2} \mbox{  (monotonicity of square root)}\\
+\iff& x < \sqrt{(\alpha + \epsilon)^2}\\
+\implies& x < \alpha + \epsilon\\
+\iff& -\epsilon < \alpha - x \numberthis
+\end{align*}
+
+A similar maniuplation of the right inequality yields
+\begin{align*}
+S-x^2 < \epsilon \iff& \alpha^2 < x^2 + \epsilon^2\\
+\iff& \alpha < \sqrt{x^2 + \epsilon^2}\\
+\implies& \alpha < \sqrt{x^2 + 2x\epsilon + \epsilon^2}\\
+\iff& \alpha < \sqrt{(x^2 + \epsilon)^2}\\
+\implies& \alpha < x + \epsilon\\
+\iff& \alpha - x < \epsilon \numberthis
+\end{align*}
+Combining (1) $\-\epsilon < \alpha - x$ and (2) $\alpha - x < \epsilon$ yields
+$|\alpha - x| < \epsilon$
+
+$\therefore |S - x^2| < \epsilon^2 \implies |\alpha - x | < \epsilon$
+\end{proof}
+Thus, if we make sure $|S-x^2| < \epsilon^2$, we can conclude $|\alpha - x| < \epsilon$, which is our requirement. There may be tighter bounds for $|\alpha^2 - x^2|$, but using $\epsilon^2$ was an easy, clean place to start.
+
+\end{document}
