@@ -2,8 +2,8 @@ import Test.QuickCheck
 import Data.Ratio
 import Data.List.Split
 
-eps=1e-15::Rational
-
+type Eps = Rational
+eps=1e-16::Eps
 -- Newton's method for approximating a square root
 x_nplus1 :: Rational -> Rational -> Rational
 x_nplus1 radicand xn = (xn + radicand/xn)/2
@@ -11,7 +11,7 @@ x_nplus1 radicand xn = (xn + radicand/xn)/2
 -- Do newton's method until you get within the error.
 --ratSqrt 0 _ = [0]
 --ratSqrt x eps = takeWhile (not.withinError) $ iterate f init
-ratSqrt :: Rational -> Rational -> Rational
+ratSqrt :: Rational -> Eps -> Rational
 ratSqrt 0 _ = 0
 ratSqrt x eps = until withinError f init
   where
@@ -19,6 +19,10 @@ ratSqrt x eps = until withinError f init
     f::Rational -> Rational
     f = (flip trimRat (eps^2)).(x_nplus1 x)
     init = initialGuess x
+
+-- guesses one more than the integer square root. This 
+-- guarantees that the initial guess is nonzero, which
+-- would break x_nplus1
 initialGuess :: Rational -> Rational
 initialGuess x = 1 + (toRational $ intSqrt $ floor $ fromRational x)
 
@@ -32,27 +36,39 @@ prop_ratSqrt x = (x >= 0) ==> (abs (x - (ratSqrt x eps)^2) <= eps^2 )
 -- This fails from time to time, mostly because the haskell (c) sqrt
 -- is bad. 18%1 and 257%1 for example will fail.
 prop_eq_sqrt :: Rational -> Property
-prop_eq_sqrt x = (x >= 0)  ==> abs( haskSqrt - mySqrt) < eps
+prop_eq_sqrt x = (x >= 0)  ==> abs( haskSqrt - mySqrt) < (fromRational eps::Double)
   where
-    haskSqrt = toRational $ sqrt $ fromRational x 
-    mySqrt = ratSqrt x eps
+    haskSqrt = (sqrt $ fromRational x)::Double
+    mySqrt = (fromRational $ ratSqrt x eps)::Double
 
--- Might have to roll my own toRational function...
 mapT f (x,y) = (f x, f y)
 
+-- Right shifts in base 10
+trimInteger :: Integer -> Integer
+trimInteger x = (signum x) * (div (abs x) 10)
+
+--this one appears slower but I'm leaving it here for funsies
+--(averaged about 30% longer to run)
+trimInteger2 :: Integer -> Integer
+trimInteger2 x
+  | abs x < 10 = 0
+  | otherwise = read (init $ show x)::Integer
 
 trimRat' :: (Integer, Integer) -> [(Integer, Integer)]
-trimRat' (a,b)
-  | b < 10 = [(a,b)]
-  | otherwise = (a,b):trimRat' (div a 10, div b 10)
+trimRat' (a,b) = takeWhile denominatorNonZero $ trimList
+  where
+    denominatorNonZero (_, m) = m /= 0
+    trimList = iterate (mapT trimInteger) (a,b)
 
-trimRat :: Rational -> Rational -> Rational
+trimRat :: Rational -> Eps -> Rational
 trimRat x eps = n%d
   where
     (n,d) = last $ takeWhile withinError $ trimRat' (numerator x, denominator x)
     withinError (a,b) = abs (a%b - x) < eps
 
-prop_trim x = x - (trimRat x eps) < eps
+prop_trim x = x - (trimRat x (eps)) < eps
+
+prop_b1 x = trimInteger x == trimInteger2 x
 
 dumbRat x = x::Rational
 
@@ -75,3 +91,5 @@ intSqrt n =
        iters = iterate newtonStep (intSqrt (div n lowerN) * lowerRoot)
        isRoot r  =  r^!2 <= n && n < (r+1)^!2
    in  head $ dropWhile (not . isRoot) iters
+
+
