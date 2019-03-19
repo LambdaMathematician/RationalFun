@@ -3,28 +3,37 @@ import Data.Ratio
 import Data.List.Split
 
 type Eps = Rational
+type Xn = Rational
+type Xn' = Rational
+
 eps=1e-16::Eps
+
+
 -- Newton's method for approximating a square root
-x_nplus1 :: Rational -> Rational -> Rational
-x_nplus1 radicand xn = (xn + radicand/xn)/2
+xn' :: Rational -> Xn -> Xn'
+xn' radicand xn = (xn + radicand/xn)/2
 
 -- Do newton's method until you get within the error.
 --ratSqrt 0 _ = [0]
 --ratSqrt x eps = takeWhile (not.withinError) $ iterate f init
 ratSqrt :: Rational -> Eps -> Rational
 ratSqrt 0 _ = 0
-ratSqrt x eps = until withinError f init
+ratSqrt radicand eps = until withinError f init
   where
-    withinError a = squaresError x a < eps^2
+    withinError a = squaresError radicand a < eps^2
     f::Rational -> Rational
-    f = (flip trimRat (eps^2)).(x_nplus1 x)
-    init = initialGuess x
+    f = (flip trimRat (eps^2)).(xn' radicand)
+    init = get_x0 radicand
 
 -- guesses one more than the integer square root. This 
 -- guarantees that the initial guess is nonzero, which
 -- would break x_nplus1
-initialGuess :: Rational -> Rational
-initialGuess x = 1 + (toRational $ intSqrt $ floor $ fromRational x)
+get_x0 :: Rational -> Rational
+get_x0 x = 1 + (toRational $ intSqrt $ floor $ fromRational x)
+
+prop_getx0 x = (x>0) ==> ((a-1)^2 <= x && x <= a^2)
+  where
+    a = get_x0 x
 
 squaresError :: Rational -> Rational -> Rational
 squaresError radicand approximateSqrt = abs (radicand - approximateSqrt^2)
