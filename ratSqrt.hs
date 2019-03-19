@@ -6,7 +6,7 @@ type Eps = Rational
 type Xn = Rational
 type Xn' = Rational
 
-eps=1e-20::Eps
+eps=1e-14::Eps
 
 -- Newton's method for approximating a square root
 xn' :: Rational -> Xn -> Xn'
@@ -31,41 +31,22 @@ ratSqrt radicand eps = fst $ until withinError iterateAndTrim (get_x0 radicand, 
     iterateNewton = xn'wError radicand
     trimTuple = mapT $ flip trimRat (eps^2)
 
--- Do newton's method until you get within the error.
---ratSqrt 0 _ = [0]
---ratSqrt x eps = takeWhile (not.withinError) $ iterate f init
-ratSqrt' :: Rational -> Eps -> Rational
-ratSqrt' 0 _ = 0
-ratSqrt' radicand eps = until withinError f init
-  where
-    withinError a = squaresError radicand a < eps^2
-    f::Rational -> Rational
-    f = (flip trimRat (eps^2)).(xn' radicand)
-    init = get_x0 radicand
-
 -- Makes initial approximation using integer square root. max
 -- guarantees that the initial guess is nonzero, which
 -- would break xn'
 get_x0 :: Rational -> Rational
 get_x0 x = max 1 (toRational $ intSqrt $ floor $ fromRational x)
 
-squaresError :: Rational -> Rational -> Rational
-squaresError radicand approximateSqrt = abs (radicand - approximateSqrt^2)
-
-prop_ratSqrt :: Rational -> Property
-prop_ratSqrt x = (x >= 0) ==> (abs (x - (ratSqrt x eps)^2) <= eps^2 )
-
-
-prop_2rats x = (x>=0) ==> abs (ratSqrt x eps - ratSqrt' x eps) < 2*eps
 -- Check to see if it aligns with the built-in square root function
 -- This fails from time to time, mostly because the haskell (c) sqrt
 -- is bad. 18%1 and 257%1 for example will fail.
 prop_eq_sqrt :: Rational -> Property
-prop_eq_sqrt x = (x >= 0)  ==> abs( haskSqrt - mySqrt) < (fromRational eps::Double)
+prop_eq_sqrt x = (x >= 0)  ==> abs( haskSqrt - mySqrt) < 2*(fromRational eps::Double)
   where
-    haskSqrt = (sqrt $ fromRational x)::Double
-    mySqrt = (fromRational $ ratSqrt x eps)::Double
+    haskSqrt = sqrt (fromRational x::Double)
+    mySqrt = fromRational (ratSqrt x eps)::Double
 
+-- Some useful utilities
 mapT f (x,y) = (f x, f y)
 
 -- Right shifts in base 10
