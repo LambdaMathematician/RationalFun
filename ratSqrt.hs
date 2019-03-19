@@ -6,34 +6,48 @@ type Eps = Rational
 type Xn = Rational
 type Xn' = Rational
 
-eps=1e-16::Eps
-
+eps=1e-20::Eps
 
 -- Newton's method for approximating a square root
 xn' :: Rational -> Xn -> Xn'
 xn' radicand xn = (xn + radicand/xn)/2
 
+-- Since x^2-S=0 is a really nice function, we can use theoretical errob bounds
+-- See equation (6) at https://en.wikipedia.org/wiki/Newton%27s_method
+-- section #Proof_of_quadratic_convergence_for_Newton's_iterative_method
+xn'wError :: Rational -> (Rational, Eps) -> (Rational, Eps)
+xn'wError radicand (xn, en) = (xnn, enn)
+  where
+    xnn = xn' radicand xn
+    enn = en^2 / (2 * xn)
+
+ratSqrt 0 _ = 0 
+--newtonSqrt radicand eps = take 5 $ iterate (xn'wError radicand) (get_x0 radicand, 1)
+--newtonSqrt radicand eps = until withinError (xn'wError radicand) (get_x0 radicand, 1)
+ratSqrt radicand eps = fst $ until withinError iterateAndTrim (get_x0 radicand, 1)
+  where
+    withinError (_,e) = e < eps
+    iterateAndTrim = trimTuple . iterateNewton
+    iterateNewton = xn'wError radicand
+    trimTuple = mapT $ flip trimRat (eps^2)
+
 -- Do newton's method until you get within the error.
 --ratSqrt 0 _ = [0]
 --ratSqrt x eps = takeWhile (not.withinError) $ iterate f init
-ratSqrt :: Rational -> Eps -> Rational
-ratSqrt 0 _ = 0
-ratSqrt radicand eps = until withinError f init
+ratSqrt' :: Rational -> Eps -> Rational
+ratSqrt' 0 _ = 0
+ratSqrt' radicand eps = until withinError f init
   where
     withinError a = squaresError radicand a < eps^2
     f::Rational -> Rational
     f = (flip trimRat (eps^2)).(xn' radicand)
     init = get_x0 radicand
 
--- guesses one more than the integer square root. This 
+-- Makes initial approximation using integer square root. max
 -- guarantees that the initial guess is nonzero, which
--- would break x_nplus1
+-- would break xn'
 get_x0 :: Rational -> Rational
-get_x0 x = 1 + (toRational $ intSqrt $ floor $ fromRational x)
-
-prop_getx0 x = (x>0) ==> ((a-1)^2 <= x && x <= a^2)
-  where
-    a = get_x0 x
+get_x0 x = max 1 (toRational $ intSqrt $ floor $ fromRational x)
 
 squaresError :: Rational -> Rational -> Rational
 squaresError radicand approximateSqrt = abs (radicand - approximateSqrt^2)
@@ -41,6 +55,8 @@ squaresError radicand approximateSqrt = abs (radicand - approximateSqrt^2)
 prop_ratSqrt :: Rational -> Property
 prop_ratSqrt x = (x >= 0) ==> (abs (x - (ratSqrt x eps)^2) <= eps^2 )
 
+
+prop_2rats x = (x>=0) ==> abs (ratSqrt x eps - ratSqrt' x eps) < 2*eps
 -- Check to see if it aligns with the built-in square root function
 -- This fails from time to time, mostly because the haskell (c) sqrt
 -- is bad. 18%1 and 257%1 for example will fail.
@@ -101,4 +117,5 @@ intSqrt n =
        isRoot r  =  r^!2 <= n && n < (r+1)^!2
    in  head $ dropWhile (not . isRoot) iters
 
-
+-- end of stolen code
+prop_intSqrt n = (n >= 0) ==> (intSqrt n)^2 <= n && n < (1 + intSqrt n)^2
