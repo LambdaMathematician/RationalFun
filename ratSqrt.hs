@@ -37,14 +37,12 @@ ratSqrt radicand eps = fst $ until withinError iterateAndTrim (get_x0 radicand, 
 get_x0 :: Rational -> Rational
 get_x0 x = max 1 (toRational $ intSqrt $ floor $ fromRational x)
 
--- Check to see if it aligns with the built-in square root function
--- This fails from time to time, mostly because the haskell (c) sqrt
--- is bad. 18%1 and 257%1 for example will fail.
-prop_eq_sqrt :: Rational -> Property
-prop_eq_sqrt x = (x >= 0)  ==> abs( haskSqrt - mySqrt) < 2*(fromRational eps::Double)
+-- Check to see if it's at least as good as the built-in square root function
+prop_alaga_sqrt :: Rational -> Property
+prop_alaga_sqrt x = (x >= 0)  ==> abs( x - mySqrt^2) <= abs ( x - haskSqrt^2)
   where
-    haskSqrt = sqrt (fromRational x::Double)
-    mySqrt = fromRational (ratSqrt x eps)::Double
+    haskSqrt = toRational $ sqrt (fromRational x::Double)
+    mySqrt = ratSqrt x (x/1e18)
 
 -- Some useful utilities
 mapT f (x,y) = (f x, f y)
