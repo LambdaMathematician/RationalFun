@@ -29,7 +29,7 @@ ratSqrt radicand eps = fst $ until withinError iterateAndTrim (get_x0 radicand, 
     withinError (_,e) = e < eps
     iterateAndTrim = trimTuple . iterateNewton
     iterateNewton = xn'wError radicand
-    trimTuple = mapT $ flip trimRat (eps^2)
+    trimTuple = mapT $ flip trimRat (eps*1e-18)
 
 -- Makes initial approximation using integer square root. max
 -- guarantees that the initial guess is nonzero, which
