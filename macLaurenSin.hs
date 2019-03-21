@@ -1,8 +1,5 @@
 import Test.QuickCheck
 import Data.Ratio
-import Prelude hiding ( pi )
-
-pi' = 31415926535897932384626433832795028841 % 10^37
 
 macLaurinSinTerms :: Rational -> [Rational]
 macLaurinSinTerms x = map makeTerms [0..]
