@@ -6,9 +6,14 @@ import Data.List.Split
 
 type Eps = Rational
 
-eps=1e-14::Eps
+-- I'd like to calculate the cirumference of the known universe
+-- to within one hydrogen atom of error please
+-- https://www.jpl.nasa.gov/edu/news/2016/3/16/how-many-decimals-of-pi-do-we-really-need/
+pi' = 31415926535897932384626433832795028841972 % 10^40
+eps=2.23e-16::Eps
 
--- toRational has some weird behavior... Might have to roll my own toRational function...
+-- toRational has some weird behavior... 
+-- Might have to roll my own toRational function.
 toRat :: (Show a, RealFrac a) => a -> Rational
 toRat x = allDigits % denom * 10^^exponent
   where
@@ -22,7 +27,6 @@ toRat x = allDigits % denom * 10^^exponent
 
 prop_rat :: (Show a, RealFrac a) => a -> Bool
 prop_rat x = x == fromRational (toRat x)
-
 
 mapT f (x,y) = (f x, f y)
 
@@ -52,6 +56,7 @@ trimRat x eps = n%d
 prop_trim x = x - (trimRat x (eps)) < eps
 prop_trim2 x = trimInteger x === trimInteger2 x
 
+roundXtoNdigits x n = (fromInteger $ round $ x * (10^n)) / (10.0^^n)
 
 deepCheck prop num = quickCheckWith (stdArgs {maxSuccess = num}) prop
 deepVerboseCheck prop num = verboseCheckWith (stdArgs {maxSuccess = num}) prop
