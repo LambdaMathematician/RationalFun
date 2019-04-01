@@ -19,6 +19,22 @@ macLaurinSin x eps
   where
     normx = niceRangeForSin x
 
+macLaurinCosTerms :: Rational -> [Rational]
+macLaurinCosTerms x = map makeTerms [0..]
+  where
+    makeTerms n = (-1)^n*x^^(2*n)/(fromInteger $ factorial (2*n))
+
+macLaurinCos' terms x = sum $ take terms $ macLaurinCosTerms x
+
+macLaurinCos x eps
+  | normx <= pi'/2 = sum $ takeWhile (\t -> (abs t) > eps) $ macLaurinCosTerms normx
+  | normx <= pi'   = -macLaurinCos (pi' - normx) eps
+  | otherwise      = macLaurinCos (2*pi' - normx) eps
+  where
+    normx = normalize x
+
+
+
 normalize :: Rational -> Rational
 normalize x
   | x >= 0 && x < 2*pi' = x
@@ -37,6 +53,9 @@ prop_rangeCheck x = (result >= -pi'/2 && result < 3/2*pi')
 
 prop_mysin :: Rational -> Bool
 prop_mysin x = abs((toRational $ sin $ fromRational x) - (macLaurinSin (toRational $ fromRational x) eps)) < 2*eps
+
+
+prop_pythag x = abs( (macLaurinSin x eps)^2 + (macLaurinCos x eps)^2 - 1 + 2 * eps^2) < 4* (eps + eps^2)
 
 xs=take 200 $ iterate (+pi'/100) 0
 takeSins = map (flip macLaurinSin eps) xs
