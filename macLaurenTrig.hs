@@ -7,12 +7,6 @@ macLaurinSinTerms x = map makeTerms [0..]
   where
     makeTerms n = (-1)^n*x^^(2*n+1)/(fromInteger $ factorial (2*n + 1))
 
-factorial :: Integer -> Integer
-factorial n
-  | n < 0 = error "STAHP. Go extend Eulerian numbers or something"
-  | n == 0 = 1
-  | otherwise = n * (factorial (n-1))
-
 macLaurinSin' terms x = sum $ take terms $ macLaurinSinTerms x
 
 -- Calculate the sine of a value to a given precision using

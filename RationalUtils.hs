@@ -56,6 +56,20 @@ trimRat x eps = n%d
 prop_trim x = x - (trimRat x (eps)) < eps
 prop_trim2 x = trimInteger x === trimInteger2 x
 
+factorial :: Integer -> Integer
+factorial n
+  | n < 0 = error "STAHP. Go extend Eulerian numbers or something"
+  | otherwise = product [1..n]
+
+nChoosek' n k = div (product [1..n]) ((product [1..k])*(product [1..(n-k)]))
+
+nChoosek n k = div (product [mm..n]) (product [1..m])
+  where
+    mm = 1+ max k (n-k)
+    m = min k (n-k)
+
+prop_nck (n,k) = n >=k && k >= 0 ==> nChoosek' n k == nChoosek n k
+
 roundXtoNdigits x n = (fromInteger $ round $ x * (10^n)) / (10.0^^n)
 
 deepCheck prop num = quickCheckWith (stdArgs {maxSuccess = num}) prop
