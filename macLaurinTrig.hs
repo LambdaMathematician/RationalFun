@@ -12,10 +12,10 @@ macLaurinSin' terms x = sum $ take terms $ macLaurinSinTerms x
 -- Calculate the sine of a value to a given precision using
 -- MacLaurin series. 
 macLaurinSin :: Rational -> Rational -> Rational
-macLaurinSin x eps
+macLaurinSin eps x
   | normx <= pi'/2 = sum $ takeWhile (\t -> (abs t) > eps) $ macLaurinSinTerms normx
-  | normx <= pi'    = macLaurinSin (pi' - normx) eps
-  | otherwise      = -macLaurinSin (normx - pi') eps
+  | normx <= pi'    = macLaurinSin eps (pi' - normx)
+  | otherwise      = -macLaurinSin eps (normx - pi')
   where
     normx = niceRangeForSin x
 
@@ -26,14 +26,12 @@ macLaurinCosTerms x = map makeTerms [0..]
 
 macLaurinCos' terms x = sum $ take terms $ macLaurinCosTerms x
 
-macLaurinCos x eps
+macLaurinCos eps x
   | normx <= pi'/2 = sum $ takeWhile (\t -> (abs t) > eps) $ macLaurinCosTerms normx
-  | normx <= pi'   = -macLaurinCos (pi' - normx) eps
-  | otherwise      = macLaurinCos (2*pi' - normx) eps
+  | normx <= pi'   = -macLaurinCos eps (pi' - normx)
+  | otherwise      = macLaurinCos eps (2*pi' - normx)
   where
     normx = normalize x
-
-
 
 normalize :: Rational -> Rational
 normalize x
@@ -52,13 +50,15 @@ prop_rangeCheck x = (result >= -pi'/2 && result < 3/2*pi')
     result = niceRangeForSin x
 
 prop_mysin :: Rational -> Bool
-prop_mysin x = abs((toRational $ sin $ fromRational x) - (macLaurinSin (toRational $ fromRational x) eps)) < 2*eps
+prop_mysin x = abs((toRational $ sin $ fromRational x) - (macLaurinSin eps (toRational $ fromRational x))) < 2*eps
 
+prop_mycos :: Rational -> Bool
+prop_mycos x = abs((toRational $ cos $ fromRational x) - (macLaurinCos eps (toRational $ fromRational x))) < 2*eps
 
-prop_pythag x = abs( (macLaurinSin x eps)^2 + (macLaurinCos x eps)^2 - 1 + 2 * eps^2) < 4* (eps + eps^2)
+prop_pythag x = abs( (macLaurinSin eps x)^2 + (macLaurinCos eps x)^2 - 1 + 2 * eps^2) < 4*eps*(1 + eps)
 
 xs=take 200 $ iterate (+pi'/100) 0
-takeSins = map (flip macLaurinSin eps) xs
+takeSins = map (macLaurinSin eps) xs
 
 --prop_mysin x = abs (sin x - (fromRational $ macLaurinSin (toRational x) 1e-20)) < x*1e-16
 
