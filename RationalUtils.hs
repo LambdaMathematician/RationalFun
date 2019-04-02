@@ -70,6 +70,46 @@ nChoosek n k = div (product [mm..n]) (product [1..m])
 
 prop_nck (n,k) = n >=k && k >= 0 ==> nChoosek' n k == nChoosek n k
 
+kroneckerDelta :: (Integer, Integer) -> Integer
+kroneckerDelta (i, j)
+  | i /= j = 0
+  | otherwise = 1
+
+--This is using the recursive definition
+dumbbernoulli :: Integer -> Rational
+dumbbernoulli m
+  | not $ oneOrEven m = 0
+  | otherwise = ((kroneckerDelta (m,0))%1) - recursiveSum
+  where
+    recursiveSum = sum $ map makeTerm $ filter oneOrEven [0..(m-1)]
+    oneOrEven k = k == 1 || even k
+    makeTerm k = (nChoosek m k)%(m-k+1) * (dumbbernoulli k)
+
+
+--adds to the list so it doesn't have to recalculate for every sum
+makeNextBernoulli :: [Rational] -> Rational
+makeNextBernoulli bs = ((kroneckerDelta (m,0))%1) - sums
+  where
+    m = toInteger $ length bs
+    sums = dotprod coeffs bs
+    coeffs = map (\k -> (nChoosek m k)%(m-k+1)) [0..(m-1)]
+
+appendNextBernoulli bs = bs ++ [makeNextBernoulli bs]
+
+bernoullis n = until (\bs -> length bs == n + 1) appendNextBernoulli []
+
+bernoulli n = last $ bernoullis n
+
+--extremely efficient algorithm from rosetta code but i don't understand it
+--also this makes B(1) = 0.5 (as opposed to -0.5)
+rcbernoulli = map head . iterate (ulli 1) . map berno $ enumFrom 0
+  where
+    berno i = 1 % (i + 1)
+    ulli _ [_] = []
+    ulli i (x:y:xs) = (i % 1) * (x - y) : ulli (i + 1) (y : xs)
+
+dotprod xs ys = sum $ zipWith (*) xs ys
+
 roundXtoNdigits x n = (fromInteger $ round $ x * (10^n)) / (10.0^^n)
 
 deepCheck prop num = quickCheckWith (stdArgs {maxSuccess = num}) prop
