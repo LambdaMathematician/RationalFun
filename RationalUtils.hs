@@ -75,7 +75,7 @@ kroneckerDelta (i, j)
   | i /= j = 0
   | otherwise = 1
 
---This is using the recursive definition
+--This is using the recursive definition to calculate a specific term
 dumbbernoulli :: Integer -> Rational
 dumbbernoulli m
   | not $ oneOrEven m = 0
@@ -87,26 +87,46 @@ dumbbernoulli m
 
 
 --adds to the list so it doesn't have to recalculate for every sum
-makeNextBernoulli :: [Rational] -> Rational
-makeNextBernoulli bs = ((kroneckerDelta (m,0))%1) - sums
-  where
-    m = toInteger $ length bs
-    sums = dotprod coeffs bs
-    coeffs = map (\k -> (nChoosek m k)%(m-k+1)) [0..(m-1)]
+bernoullis :: [Rational]
+bernoullis = map last $ iterate appendNextBernoulli [1]
 
+appendNextBernoulli :: [Rational] -> [Rational]
 appendNextBernoulli bs = bs ++ [makeNextBernoulli bs]
 
-bernoullis n = until (\bs -> length bs == n + 1) appendNextBernoulli []
-
-bernoulli n = last $ bernoullis n
-
---extremely efficient algorithm from rosetta code but i don't understand it
---also this makes B(1) = 0.5 (as opposed to -0.5)
-rcbernoulli = map head . iterate (ulli 1) . map berno $ enumFrom 0
+makeNextBernoulli :: [Rational] -> Rational
+makeNextBernoulli bs = (kroneckerDelta (m,0))%1 - recursiveSum
   where
-    berno i = 1 % (i + 1)
-    ulli _ [_] = []
-    ulli i (x:y:xs) = (i % 1) * (x - y) : ulli (i + 1) (y : xs)
+    m = toInteger $ length bs
+    recursiveSum = dotprod coeffsList bs
+    coeffsList = map makecoeff [0..(m-1)]
+    makecoeff k = (nChoosek m k)%(m-k+1)
+
+oddBernoullisAreZero n = and $ take (div n 2) $ map (==0) $ map fst $ drop 1 $ filter (\(_,k) -> odd k) $ zip bernoullis [0..]
+
+prop_oddBsGT1AreZero n = (n > 0) ==> bernoullis !! (2*n+1) == 0
+
+
+-- why is this consisntenly a little slower?!?!
+-- (:) is faster than ++, and head
+-- is faster than last. Surely it's not the index inversion...
+maybeOptobern = map head $ iterate addBernoulliToHead [1]
+
+addBernoulliToHead bs
+  | m > 2 && odd m = 0%1:bs -- increases efficiency by a lot
+  | otherwise = (makeNextBernoulliHead bs) : bs
+  where
+    makeNextBernoulliHead bs = (kroneckerDelta (m,0))%1 - sums
+    m = toInteger $ length bs
+    sums = dotprod coeffs bs
+    coeffs = map (\k -> (nChoosek m k)%(m-k+1)) $ map (m-1-) [0..(m-1)]
+
+--pretty efficient algorithm from rosetta code but i don't understand it
+--also this makes B(1) = 0.5 (as opposed to the standard -0.5)
+--ACTUALLY I WIN BY LIKE 60% NOW
+rcbernoulli = map head . iterate (ulli 1) . map berno $ enumFrom 0
+berno i = 1 % (i + 1)
+ulli _ [_] = []
+ulli i (x:y:xs) = (i % 1) * (x - y) : ulli (i + 1) (y : xs)
 
 dotprod xs ys = sum $ zipWith (*) xs ys
 
