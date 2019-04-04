@@ -61,7 +61,7 @@ factorial n
   | n < 0 = error "STAHP. Go extend Eulerian numbers or something"
   | otherwise = product [1..n]
 
-nChoosek n k = div (product [mm..n]) (product [1..m])
+combination n k = div (product [mm..n]) (product [1..m])
   where
     mm = 1+ max k (n-k)
     m = min k (n-k)
@@ -76,7 +76,7 @@ dumbbernoulli :: Integer -> Rational
 dumbbernoulli m = ((kroneckerDelta (m,0))%1) - recursiveSum
   where
     recursiveSum = sum $ map makeTerm [0..(m-1)]
-    makeTerm k = (nChoosek m k)%(m-k+1) * (dumbbernoulli k)
+    makeTerm k = (combination m k)%(m-k+1) * (dumbbernoulli k)
 
 
 --adds to the list so it doesn't have to recalculate for every sum
@@ -92,7 +92,7 @@ makeNextBernoulli bs = (kroneckerDelta (m,0))%1 - recursiveSum
     m = toInteger $ length bs
     recursiveSum = dotprod coeffsList bs
     coeffsList = map makecoeff [0..(m-1)]
-    makecoeff k = (nChoosek m k)%(m-k+1)
+    makecoeff k = (combination m k)%(m-k+1)
 
 
 --some properties
@@ -113,7 +113,7 @@ addBernoulliToHead bs
     makeNextBernoulliHead bs = (kroneckerDelta (m,0))%1 - sums
     m = toInteger $ length bs
     sums = dotprod coeffs bs
-    coeffs = map (\k -> (nChoosek m k)%(m-k+1)) $ map (m-1-) [0..(m-1)]
+    coeffs = map (\k -> (combination m k)%(m-k+1)) $ map (m-1-) [0..(m-1)]
 
 --pretty efficient algorithm from rosetta code but i don't understand it
 --also this makes B(1) = 0.5 (as opposed to the standard -0.5)
