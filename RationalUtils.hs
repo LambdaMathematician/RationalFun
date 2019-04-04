@@ -36,8 +36,8 @@ trimInteger x = (signum x) * (div (abs x) 10)
 
 --this one appears slower but I'm leaving it here for funsies
 --(averaged about 30% longer to run)
-trimInteger2 :: Integer -> Integer
-trimInteger2 x
+trimIntegerSlow :: Integer -> Integer
+trimIntegerSlow x
   | abs x < 10 = 0
     | otherwise = read (init $ show x)::Integer
 
@@ -47,28 +47,24 @@ trimRat' (a,b) = takeWhile denominatorNonZero $ trimList
     denominatorNonZero (_, m) = m /= 0
     trimList = iterate (mapT trimInteger) (a,b)
 
-trimRat :: Rational -> Eps -> Rational
-trimRat x eps = n%d
+trimRat :: Eps -> Rational -> Rational
+trimRat eps x = n%d
   where
     (n,d) = last $ takeWhile withinError $ trimRat' (numerator x, denominator x)
     withinError (a,b) = abs (a%b - x) < eps
 
-prop_trim x = x - (trimRat x (eps)) < eps
-prop_trim2 x = trimInteger x === trimInteger2 x
+prop_trim x = x - (trimRat eps x) < eps
+prop_trim2 x = trimInteger x === trimIntegerSlow x
 
 factorial :: Integer -> Integer
 factorial n
   | n < 0 = error "STAHP. Go extend Eulerian numbers or something"
   | otherwise = product [1..n]
 
-nChoosek' n k = div (product [1..n]) ((product [1..k])*(product [1..(n-k)]))
-
 nChoosek n k = div (product [mm..n]) (product [1..m])
   where
     mm = 1+ max k (n-k)
     m = min k (n-k)
-
-prop_nck (n,k) = n >=k && k >= 0 ==> nChoosek' n k == nChoosek n k
 
 kroneckerDelta :: (Integer, Integer) -> Integer
 kroneckerDelta (i, j)
@@ -77,12 +73,9 @@ kroneckerDelta (i, j)
 
 --This is using the recursive definition to calculate a specific term
 dumbbernoulli :: Integer -> Rational
-dumbbernoulli m
-  | not $ oneOrEven m = 0
-  | otherwise = ((kroneckerDelta (m,0))%1) - recursiveSum
+dumbbernoulli m = ((kroneckerDelta (m,0))%1) - recursiveSum
   where
-    recursiveSum = sum $ map makeTerm $ filter oneOrEven [0..(m-1)]
-    oneOrEven k = k == 1 || even k
+    recursiveSum = sum $ map makeTerm [0..(m-1)]
     makeTerm k = (nChoosek m k)%(m-k+1) * (dumbbernoulli k)
 
 
@@ -101,6 +94,8 @@ makeNextBernoulli bs = (kroneckerDelta (m,0))%1 - recursiveSum
     coeffsList = map makecoeff [0..(m-1)]
     makecoeff k = (nChoosek m k)%(m-k+1)
 
+
+--some properties
 oddBernoullisAreZero n = and $ take (div n 2) $ map (==0) $ map fst $ drop 1 $ filter (\(_,k) -> odd k) $ zip bernoullis [0..]
 
 prop_oddBsGT1AreZero n = (n > 0) ==> bernoullis !! (2*n+1) == 0

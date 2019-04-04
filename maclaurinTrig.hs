@@ -64,6 +64,9 @@ prop_mysin x = abs((toRational $ sin $ fromRational x) - (maclaurinSin eps (toRa
 prop_mycos :: Rational -> Bool
 prop_mycos x = abs((toRational $ cos $ fromRational x) - (maclaurinCos eps (toRational $ fromRational x))) < 2*eps
 
+prop_cosIsSinShift :: Rational -> Bool
+prop_cosIsSinShift x = abs (maclaurinCos eps x - maclaurinSin eps (x+pi'/2)) < 2*eps
+
 prop_pythag x = abs( (maclaurinSin eps x)^2 + (maclaurinCos eps x)^2 - 1 + 2 * eps^2) < 4*eps*(1 + eps)
 
 xs=take 200 $ iterate (+pi'/100) 0
