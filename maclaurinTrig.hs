@@ -33,6 +33,15 @@ maclaurinCos eps x
   where
     normx = normalize x
 
+maclaurinTanTerms :: Rational -> [Rational]
+maclaurinTanTerms x = map makeTerms [1..]
+  where
+    makeTerms :: Integer -> Rational
+    makeTerms n = (b2n n)*(-4)^^n*(1-4^^n)*(1%(factorial (2*n)))*(x^(2*n-1))
+    b2n n = bernoullis !! (fromInteger (2*n))
+
+maclaurinTan eps x = sum $ takeWhile (\t -> (abs t) > eps) $ maclaurinTanTerms x
+
 normalize :: Rational -> Rational
 normalize x
   | x >= 0 && x < 2*pi' = x
